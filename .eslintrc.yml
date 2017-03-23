@@ -1,0 +1,43 @@
+plugin:
+    - react
+
+extends:
+    - plugin:react/recommended
+    - eslint:recommended
+
+rules:
+    arrow-parens: error
+    arrow-spacing: error
+    comma-dangle: [error, always-multiline]
+    no-console: off
+    no-constant-condition: off
+    no-unexpected-multiline: error
+    no-unreachable: error
+    no-unused-vars: [error, { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }]
+    no-var: error
+    object-shorthand: error
+    prefer-arrow-callback: error
+    prefer-const: error
+    prefer-template: error
+    quotes: [error, double]
+    semi: [error, never]
+    keyword-spacing: error
+    brace-style: [error, stroustrup]
+    indent: [error, 4]
+
+    react/prop-types: off
+
+env:
+    es6: true
+    node: true
+    browser: true
+
+parserOptions:
+    sourceType: module
+    ecmaVersion: 8
+    ecmaFeatures:
+        jsx: true
+
+settings:
+    react:
+      pragma: h
