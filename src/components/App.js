@@ -25,63 +25,100 @@ export default class App extends Component {
                         padding: 5,
                     }}
                 >
-                    {inventory.map((options) => (
+                    {inventory.map((options, index) => (
                         <DragableItem
                             style={{
                                 display: "flex",
                                 width: options.initialSize.width,
                                 height: options.initialSize.height,
                             }}
-                            startMove={this._createDragScenario.bind(this, options)}
-                            item={{options}}
-                        />
+                            startMove={this._createDragScenario.bind(this, index)}
+                        >
+                            {options.renderItem(Object.assign({}, options.defaultProps, options.initialSize))}
+                        </DragableItem>
                     ))}
                 </div>
                 <div
-                    ref={ref(this, "_area")}
                     style={{
                         flex: 1,
-                        position: "relative",
-                        backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
-                            <svg
-                                xmlns='http://www.w3.org/2000/svg'
-                                width='${GRID_SIZE}'
-                                height='${GRID_SIZE}'
-                                viewbox='0 0 ${GRID_SIZE} ${GRID_SIZE}'
-                            >
-                                <circle cx="${GRID_SIZE / 2}" cy="${GRID_SIZE / 2}" r="1" fill="#eee"/>
-                            </svg>
-                        `)}")`,
-                        backgroundPosition: `${GRID_SIZE / 2}px ${GRID_SIZE / 2}px`,
-                    }}
-                    onClick={() => {
-                        this.setState({ focusItemId: false })
+                        display: "flex",
+                        flexDirection: "column",
                     }}
                 >
-                    {itemsOrder.map((itemId) => (
-                        <DragableItem
-                            key={itemId}
+                    <div
+                        ref={ref(this, "_area")}
+                        style={{
+                            flex: 1,
+                            position: "relative",
+                            backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`
+                                <svg
+                                    xmlns='http://www.w3.org/2000/svg'
+                                    width='${GRID_SIZE}'
+                                    height='${GRID_SIZE}'
+                                    viewbox='0 0 ${GRID_SIZE} ${GRID_SIZE}'
+                                >
+                                    <circle cx="${GRID_SIZE / 2}" cy="${GRID_SIZE / 2}" r="1" fill="#eee"/>
+                                </svg>
+                            `)}")`,
+                            backgroundPosition: `${GRID_SIZE / 2}px ${GRID_SIZE / 2}px`,
+                        }}
+                        onClick={() => {
+                            this.setState({ focusItemId: false })
+                        }}
+                    >
+                        {itemsOrder.map((itemId) => {
+                            const item = items[itemId]
+                            return (
+                                <DragableItem
+                                    key={itemId}
+                                    style={{
+                                        position: "absolute",
+                                        display: "flex",
+                                        top: item.position.y,
+                                        left: item.position.x,
+                                        width: item.size.width,
+                                        height: item.size.height,
+                                        opacity: this._isInArea(item) ? "1" : "0.5",
+                                        boxShadow: focusItemId === itemId ? "0 0 10px rgba(0, 0, 0, 0.5)" : "none",
+                                        zIndex: focusItemId === itemId ? "1" : "0",
+                                    }}
+                                    startMove={this._createDragScenario.bind(this, itemId)}
+                                    startResize={this._createResizeScenario.bind(this, itemId)}
+                                    onClick={() => this.setState({ focusItemId: itemId })}
+                                    isActive={item.active}
+                                >
+                                    {inventory[item.inventoryIndex].renderItem(this._getItemProps(itemId))}
+                                </DragableItem>
+                            )
+                        })}
+                    </div>
+                    {focusItemId && (
+                        <div
                             style={{
-                                position: "absolute",
-                                display: "flex",
-                                top: items[itemId].position.y,
-                                left: items[itemId].position.x,
-                                width: items[itemId].size.width,
-                                height: items[itemId].size.height,
-                                opacity: this._isInArea(items[itemId]) ? "1" : "0.5",
-                                boxShadow: focusItemId === itemId ? "0 0 10px rgba(0, 0, 0, 0.5)" : "none",
-                                zIndex: focusItemId === itemId ? "1" : "0",
+                                backgroundColor: "#eee",
+                                padding: 5,
                             }}
-                            startMove={this._createDragScenario.bind(this, itemId)}
-                            startResize={this._createResizeScenario.bind(this, itemId)}
-                            onClick={() => this.setState({ focusItemId: itemId })}
-                            item={items[itemId]}
-                        />
-                    ))}
+                        >
+                            {inventory[items[focusItemId].inventoryIndex].renderSettings(
+                                this._getItemProps(focusItemId),
+                                (newProps) => {
+                                    this._replaceItem({
+                                        id: focusItemId,
+                                        props: Object.assign({}, items[focusItemId].props, newProps),
+                                    })
+                                }
+                            ) || "No settings available"}
+                        </div>
+                    )}
                 </div>
             </div>
 
         )
+    }
+
+    _getItemProps(itemId) {
+        const item = this.state.items[itemId]
+        return Object.assign({}, item.props, item.size, { dragging: item.active })
     }
 
     _createDragScenario(itemIdOrOptions, startEvent, base) {
@@ -106,8 +143,9 @@ export default class App extends Component {
                             [itemId]: {
                                 id: itemId,
                                 position: getPosition(event),
-                                size: itemIdOrOptions.initialSize,
-                                options: itemIdOrOptions,
+                                size: this.props.inventory[itemIdOrOptions].initialSize,
+                                props: this.props.inventory[itemIdOrOptions].defaultProps,
+                                inventoryIndex: itemIdOrOptions,
                                 active: true,
                             },
                         }),

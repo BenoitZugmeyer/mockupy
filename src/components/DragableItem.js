@@ -1,6 +1,5 @@
 import { h, Component } from "preact"
 import drag from "../drag"
-import renderItem from "./items"
 import { GRID_SIZE, NORTH, EAST, WEST, SOUTH } from "../constants"
 
 export default class DragableItem extends Component {
@@ -10,10 +9,11 @@ export default class DragableItem extends Component {
         startResize,
         startMove,
         style,
-        item,
+        isActive,
+        children,
     }, {resizeDirection}) {
         let container
-        const delta = item.active ? -GRID_SIZE : 0
+        const delta = isActive ? -GRID_SIZE : 0
         return (
             <div
                 ref={(el) => {
@@ -28,7 +28,7 @@ export default class DragableItem extends Component {
                 }}
 
                 onMouseMove={(event) => {
-                    if (item.active || !startResize) return
+                    if (isActive || !startResize) return
 
                     // Do not change cursor while the mouse is clicked
                     if (event.buttons) return
@@ -48,7 +48,7 @@ export default class DragableItem extends Component {
                 }}
 
                 onMouseLeave={() => {
-                    if (item.active || !startResize) return
+                    if (isActive || !startResize) return
 
                     this.setState(() => ({
                         over: null,
@@ -58,7 +58,6 @@ export default class DragableItem extends Component {
                 <DragHandle
                     style={{
                         position: "absolute",
-                        background: item.active ? "rgba(0, 0, 0, 0.2)" : "",
                         top: delta,
                         right: delta,
                         left: delta,
@@ -91,8 +90,21 @@ export default class DragableItem extends Component {
                             return startMove(event, base)
                         }
                     }}
-                />
-                {renderItem(item.options)}
+                >
+                    {isActive && (
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: -delta,
+                                left: -delta,
+                                right: -delta,
+                                bottom: -delta,
+                                backgroundColor: "rgba(0, 0, 0, 0.1)",
+                            }}
+                        />
+                    )}
+                </DragHandle>
+                {children}
             </div>
         )
     }
