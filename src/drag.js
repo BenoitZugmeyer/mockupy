@@ -62,6 +62,7 @@ function onStart(start, event) {
     if (activeSubscriber) return
 
     // This cover left click and touch
+    // TODO use event.buttons instead
     if ((event.which || event.button || 0) >= 2) return
 
     const scenario = start(event)
@@ -98,6 +99,7 @@ function onMove(event) {
         const snapDistance = isTouchEvent(event) ?
             get("touchSnap", 20) :
             get("mouseSnap", 10)
+        // TODO use event.touches
         const distance =
             (
                 (event.pageX - activeSubscriber.startOrigin.x) ** 2 +

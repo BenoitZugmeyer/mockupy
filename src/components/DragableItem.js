@@ -31,7 +31,7 @@ export default class DragableItem extends Component {
                     if (item.active || !startResize) return
 
                     // Do not change cursor while the mouse is clicked
-                    if (event.which) return
+                    if (event.buttons) return
 
                     const { left, right, top, bottom } = container.getBoundingClientRect()
                     const { pageX, pageY } = event
