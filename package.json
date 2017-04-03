@@ -15,8 +15,8 @@
     "webpack-dev-server": "^2.4.2"
   },
   "scripts": {
-      "build": "webpack -p",
-      "serve-dev": "webpack-dev-server --progress -d",
-      "update-demo": "rm -rf dist/ && webpack -p && git checkout gh-pages && mv dist/* . && rm -r dist && git add -u && git commit -m 'update demo'"
+    "build": "webpack -p",
+    "serve-dev": "webpack-dev-server --progress -d",
+    "update-demo": "rm -rf dist/ && webpack -p && git checkout gh-pages && mv dist/* . && rm -r dist && git add -u && git commit -m 'update demo'"
   }
 }

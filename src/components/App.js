@@ -20,14 +20,14 @@ export default class App extends Component {
             focusItemId: false,
             items: initialState.items || {},
             itemsOrder: initialState.itemsOrder || [],
-            inventoryItems: props.inventory.map((desc, inventoryIndex) => ({
-                props: desc.getDefaultProps(),
-                inventoryIndex,
+            inventoryItems: Array.from(props.inventoryMap).map(([inventoryName, item]) => ({
+                props: item.getDefaultProps(),
+                inventoryName,
             })),
         }
     }
 
-    render({ inventory }, { inventoryItems, items, itemsOrder, focusItemId }) {
+    render({ inventoryMap }, { inventoryItems, items, itemsOrder, focusItemId }) {
         return (
             <div style={{ display: "flex", flex: "1" }}>
                 <div
@@ -46,7 +46,7 @@ export default class App extends Component {
                                 }}
                                 startMove={this._createDragScenario.bind(this, item)}
                             >
-                                {inventory[item.inventoryIndex].renderItem(formatProps(item.props))}
+                                {inventoryMap.get(item.inventoryName).renderItem(formatProps(item.props))}
                             </DragableItem>
                         )
                     })}
@@ -100,7 +100,7 @@ export default class App extends Component {
                                     onClick={() => this.setState({ focusItemId: itemId })}
                                     isActive={item.active}
                                 >
-                                    {inventory[item.inventoryIndex].renderItem(this._getItemProps(itemId))}
+                                    {inventoryMap.get(item.inventoryName).renderItem(this._getItemProps(itemId))}
                                 </DragableItem>
                             )
                         })}
@@ -112,7 +112,7 @@ export default class App extends Component {
                                 padding: 5,
                             }}
                         >
-                            {inventory[items[focusItemId].inventoryIndex].renderSettings(
+                            {inventoryMap.get(items[focusItemId].inventoryName).renderSettings(
                                 this._getItemProps(focusItemId),
                                 (newProps) => {
                                     this._replaceItem({
