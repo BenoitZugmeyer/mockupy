@@ -5,6 +5,13 @@ import roundCoordinate from "../roundCoordinate"
 import DragableItem from "./DragableItem"
 import generateUniqueId from "../generateUniqueId"
 
+function formatProps(props, extraProps) {
+    const formatedProps = Object.assign({}, props, extraProps)
+    formatedProps.width = roundCoordinate(formatedProps.width)
+    formatedProps.height = roundCoordinate(formatedProps.height)
+    return formatedProps
+}
+
 export default class App extends Component {
     constructor(props) {
         super(props)
@@ -13,10 +20,14 @@ export default class App extends Component {
             focusItemId: false,
             items: initialState.items || {},
             itemsOrder: initialState.itemsOrder || [],
+            inventoryItems: props.inventory.map((desc, inventoryIndex) => ({
+                props: desc.getDefaultProps(),
+                inventoryIndex,
+            })),
         }
     }
 
-    render({ inventory }, { items, itemsOrder, focusItemId }) {
+    render({ inventory }, { inventoryItems, items, itemsOrder, focusItemId }) {
         return (
             <div style={{ display: "flex", flex: "1" }}>
                 <div
@@ -25,18 +36,20 @@ export default class App extends Component {
                         padding: 5,
                     }}
                 >
-                    {inventory.map((options, index) => (
-                        <DragableItem
-                            style={{
-                                display: "flex",
-                                width: options.initialSize.width,
-                                height: options.initialSize.height,
-                            }}
-                            startMove={this._createDragScenario.bind(this, index)}
-                        >
-                            {options.renderItem(Object.assign({}, options.defaultProps, options.initialSize))}
-                        </DragableItem>
-                    ))}
+                    {inventoryItems.map((item) => {
+                        return (
+                            <DragableItem
+                                style={{
+                                    display: "flex",
+                                    width: item.props.width,
+                                    height: item.props.height,
+                                }}
+                                startMove={this._createDragScenario.bind(this, item)}
+                            >
+                                {inventory[item.inventoryIndex].renderItem(formatProps(item.props))}
+                            </DragableItem>
+                        )
+                    })}
                 </div>
                 <div
                     style={{
@@ -76,13 +89,13 @@ export default class App extends Component {
                                         display: "flex",
                                         top: item.position.y,
                                         left: item.position.x,
-                                        width: item.size.width,
-                                        height: item.size.height,
+                                        width: item.props.width,
+                                        height: item.props.height,
                                         opacity: this._isInArea(item) ? "1" : "0.5",
                                         boxShadow: focusItemId === itemId ? "0 0 10px rgba(0, 0, 0, 0.5)" : "none",
                                         zIndex: focusItemId === itemId ? "1" : "0",
                                     }}
-                                    startMove={this._createDragScenario.bind(this, itemId)}
+                                    startMove={this._createDragScenario.bind(this, item)}
                                     startResize={this._createResizeScenario.bind(this, itemId)}
                                     onClick={() => this.setState({ focusItemId: itemId })}
                                     isActive={item.active}
@@ -104,7 +117,7 @@ export default class App extends Component {
                                 (newProps) => {
                                     this._replaceItem({
                                         id: focusItemId,
-                                        props: Object.assign({}, items[focusItemId].props, newProps),
+                                        props: formatProps(items[focusItemId].props, newProps),
                                     })
                                 }
                             ) || "No settings available"}
@@ -118,11 +131,11 @@ export default class App extends Component {
 
     _getItemProps(itemId) {
         const item = this.state.items[itemId]
-        return Object.assign({}, item.props, item.size, { dragging: item.active })
+        return formatProps(item.props, { dragging: item.active })
     }
 
-    _createDragScenario(itemIdOrOptions, startEvent, base) {
-        let itemId = typeof itemIdOrOptions === "string" && itemIdOrOptions
+    _createDragScenario(originalItem, startEvent, base) {
+        let itemId = originalItem.id
 
         const baseRect = base.getBoundingClientRect()
         const deltaX = startEvent.pageX - baseRect.left
@@ -140,14 +153,11 @@ export default class App extends Component {
                     itemId = generateUniqueId()
                     this.setState(({items, itemsOrder}) => ({
                         items: Object.assign({}, items, {
-                            [itemId]: {
+                            [itemId]: Object.assign({}, originalItem, {
                                 id: itemId,
                                 position: getPosition(event),
-                                size: this.props.inventory[itemIdOrOptions].initialSize,
-                                props: this.props.inventory[itemIdOrOptions].defaultProps,
-                                inventoryIndex: itemIdOrOptions,
                                 active: true,
-                            },
+                            }),
                         }),
                         itemsOrder: [...itemsOrder, itemId],
                     }))
@@ -169,7 +179,7 @@ export default class App extends Component {
     }
 
     _createResizeScenario(itemId, direction, startEvent) {
-        const {position: { x, y }, size: { height, width }} = this.state.items[itemId]
+        const {position: { x, y }, props: { height, width }} = this.state.items[itemId]
 
         return {
             move: (event) => {
@@ -183,7 +193,7 @@ export default class App extends Component {
                         x: direction & WEST ? x + deltaX : x,
                         y: direction & NORTH ? y + deltaY : y,
                     },
-                    size: {
+                    props: {
                         width: Math.max(GRID_SIZE, (
                             direction & EAST ? width + deltaX :
                             direction & WEST ? width - deltaX :
@@ -215,7 +225,7 @@ export default class App extends Component {
         }
     }
 
-    _isInArea({ position: { x, y }, size: { width, height } }) {
+    _isInArea({ position: { x, y }, props: { width, height } }) {
         if (!this._area) return true
         const rect = this._area.getBoundingClientRect()
         return x >= 0 && y >= 0 && x + width <= rect.width && y + height <= rect.height
@@ -236,10 +246,14 @@ export default class App extends Component {
     _replaceItem(item, cb) {
         this.setState(({items}) => {
             if (!items.hasOwnProperty(item.id)) throw new Error(`Unkwnown item ${item.id}`)
+            const existingItem = items[item.id]
+            const newItem = Object.assign({}, existingItem, item, {
+                props: Object.assign({}, existingItem.props, item.props),
+            })
 
             return {
                 items: Object.assign({}, items, {
-                    [item.id]: Object.assign({}, items[item.id], item),
+                    [item.id]: newItem,
                 }),
             }
         }, cb)

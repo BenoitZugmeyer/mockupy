@@ -13,10 +13,13 @@ Object.assign(document.body.style, {
 
 const inventory = [
     {
-        defaultProps: {
-            label: "blop",
+        getDefaultProps() {
+            return {
+                width: 100,
+                height: 30,
+                label: "plop",
+            }
         },
-        initialSize: { width: 100, height: 30 },
         renderItem({label}) {
             return <button style={{ flex: 1 }}>{label}</button>
         },
@@ -25,10 +28,13 @@ const inventory = [
         },
     },
     {
-        defaultProps: {
-            text: "blop",
+        getDefaultProps() {
+            return {
+                width: 100,
+                height: 30,
+                text: "plop",
+            }
         },
-        initialSize: { width: 100, height: 30 },
         renderItem({text}) {
             return (
                 <input
@@ -54,11 +60,14 @@ const inventory = [
         },
     },
     {
-        defaultProps: {
-            category: "cats",
-            index: 1,
+        getDefaultProps() {
+            return {
+                width: 100,
+                height: 50,
+                category: "cats",
+                index: 1,
+            }
         },
-        initialSize: { width: 100, height: 40 },
         renderItem({ width, height, category, index, dragging }) {
             if (dragging) return
 
